@@ -4,6 +4,10 @@ from django_ckeditor_5.widgets import CKEditor5Widget  # ✅ Correct import
 
 from .models import Service, Post, Comment, Booking, Advertisement, Partner, Subscriber, Author, Category, Tag, NewsletterSubscriber, AdView, AdClick, Event
 
+admin.site.site_header = "Captain Media Admin"
+admin.site.site_title = "Captain Media Admin Portal"
+admin.site.index_title = "Welcome to Captain Media Dashboard"
+
 # Custom form to use CKEditor5 in admin
 class PostAdminForm(forms.ModelForm):
     class Meta:
