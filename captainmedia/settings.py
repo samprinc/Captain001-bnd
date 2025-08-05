@@ -66,7 +66,7 @@ CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",  # For React dev
     "http://127.0.0.1:3000",
     "http://localhost:5173",  
-    "https://yourdomain.com",  # Replace with your deployed frontend domain
+    "https://www.captain001media.co.ke",  # Replace with your deployed frontend domain
 ]
 
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
