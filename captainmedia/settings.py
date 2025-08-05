@@ -26,7 +26,7 @@ SECRET_KEY = 'django-insecure-clmyex#ms9r4=6vci)4brs%xp=gfo5q64p#5o$x^vt9cz7*gk=
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*']  # ✅ Update with your domain
 
 
 # Application definition
@@ -94,6 +94,10 @@ DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
         'NAME': BASE_DIR / 'db.sqlite3',
+        'OPTIONS': {
+            'timeout': 20,  # Increase the timeout to 20 seconds (default is 5)
+
+    }
     }
 }
 

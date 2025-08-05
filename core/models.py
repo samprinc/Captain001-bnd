@@ -58,7 +58,6 @@ class Comment(models.Model):
     name = models.CharField(max_length=100)
     content = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)
-    approved = models.BooleanField(default=False)
 
     def __str__(self):
         return f"{self.name} on {self.post.title}"
@@ -75,17 +74,41 @@ class Booking(models.Model):
     def __str__(self):
         return f"{self.name} - {self.service.title}"
 
-
 class Advertisement(models.Model):
+    DEVICE_CHOICES = [
+        ('desktop', 'Desktop'),
+        ('mobile', 'Mobile'),
+        ('both', 'Both'),
+    ]
+    PLACEMENT_CHOICES = [
+        ('carousel', 'Carousel'),
+        ('inline', 'Inline'),
+        ('mobile', 'Mobile Bottom Banner'),
+    ]
+
     title = models.CharField(max_length=100)
     image = CloudinaryField('image')
     link = models.URLField(blank=True, null=True)
     start_date = models.DateField()
     end_date = models.DateField()
     active = models.BooleanField(default=True)
+    device_target = models.CharField(max_length=10, choices=DEVICE_CHOICES, default='both')
+    placement = models.CharField(max_length=20, choices=PLACEMENT_CHOICES, default='inline')
 
     def __str__(self):
         return self.title
+
+class AdView(models.Model):
+    ad = models.ForeignKey(Advertisement, on_delete=models.CASCADE, related_name='views')
+    ip_address = models.GenericIPAddressField()
+    user_agent = models.TextField()
+    timestamp = models.DateTimeField(auto_now_add=True)
+
+class AdClick(models.Model):
+    ad = models.ForeignKey(Advertisement, on_delete=models.CASCADE, related_name='clicks')
+    ip_address = models.GenericIPAddressField()
+    user_agent = models.TextField()
+    timestamp = models.DateTimeField(auto_now_add=True)
 
 
 class Partner(models.Model):
@@ -108,3 +131,12 @@ class Subscriber(models.Model):
 class NewsletterSubscriber(models.Model):
     email = models.EmailField(unique=True)
     joined_at = models.DateTimeField(auto_now_add=True)
+
+class Event(models.Model):
+    title = models.CharField(max_length=255)
+    description = models.TextField()
+    date = models.DateTimeField()
+    location = models.CharField(max_length=255)
+
+    def __str__(self):
+        return self.title
