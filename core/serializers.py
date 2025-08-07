@@ -1,7 +1,7 @@
 from rest_framework import serializers
 from .models import (
     Service, Post, Comment, Booking, Advertisement,
-    Partner, Subscriber, Author, Category, Tag, NewsletterSubscriber, Event
+    Partner, Subscriber, Author, Category, Tag, NewsletterSubscriber, Event, Engagement, ActiveOffer
 )
 
 import re
@@ -105,3 +105,18 @@ class NewsletterSubscriberSerializer(serializers.ModelSerializer):
     class Meta:
         model = NewsletterSubscriber
         fields = ['email']
+
+
+
+class EngagementSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Engagement
+        fields = '__all__'
+
+# backend/news/serializers.py
+
+
+class ActiveOfferSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ActiveOffer
+        fields = ['id', 'title', 'expires', 'link']

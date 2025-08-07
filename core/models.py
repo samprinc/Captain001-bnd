@@ -140,3 +140,25 @@ class Event(models.Model):
 
     def __str__(self):
         return self.title
+
+
+
+class Engagement(models.Model):
+    title = models.CharField(max_length=255)
+    date = models.CharField(max_length=100)  # e.g., "July 2025"
+    description = models.TextField()
+
+    def __str__(self):
+        return self.title
+
+# backend/news/models.py
+
+
+
+class ActiveOffer(models.Model):
+    title = models.CharField(max_length=200)
+    expires = models.DateField()
+    link = models.URLField()
+
+    def __str__(self):
+        return self.title

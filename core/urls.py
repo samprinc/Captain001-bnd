@@ -5,7 +5,7 @@ from .views import (
     ServiceViewSet, PostViewSet, CommentViewSet, BookingViewSet, 
     AdvertisementViewSet, AuthorViewSet, CategoryViewSet, TagViewSet,
     PartnerList, SubscriberListCreateView, NewsletterSubscriberViewSet, 
-    EventViewSet,
+    EventViewSet, EngagementListAPIView, ActiveOfferListView,
     ad_stats  # ✅ import ad_stats
 )
 
@@ -26,4 +26,6 @@ urlpatterns = [
     path('partners/', PartnerList.as_view(), name='partner-list'),
     path('subscribers/', SubscriberListCreateView.as_view(), name='subscriber-list-create'),
     path('ad-stats/', ad_stats, name='ad-stats'),  # ✅ analytics endpoint
+    path('engagements/', EngagementListAPIView.as_view(), name='engagements-list'),
+    path('active-offers/', ActiveOfferListView.as_view(), name='active-offers'),
 ]

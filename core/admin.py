@@ -2,7 +2,7 @@ from django.contrib import admin
 from django import forms
 from django_ckeditor_5.widgets import CKEditor5Widget  # ✅ Correct import
 
-from .models import Service, Post, Comment, Booking, Advertisement, Partner, Subscriber, Author, Category, Tag, NewsletterSubscriber, AdView, AdClick, Event
+from .models import ActiveOffer,Engagement,Service, Post, Comment, Booking, Advertisement, Partner, Subscriber, Author, Category, Tag, NewsletterSubscriber, AdView, AdClick, Event
 
 admin.site.site_header = "Captain Media Admin"
 admin.site.site_title = "Captain Media Admin Portal"
@@ -78,6 +78,9 @@ admin.site.register(Author)
 admin.site.register(Category)
 admin.site.register(Tag)
 admin.site.register(NewsletterSubscriber)
+admin.site.register(Engagement)
+admin.site.register(ActiveOffer)
+
 @admin.register(Event)
 class EventAdmin(admin.ModelAdmin):
     list_display = ('title', 'date', 'location')

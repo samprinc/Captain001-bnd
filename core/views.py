@@ -12,14 +12,29 @@ from django.utils.decorators import method_decorator
 
 from .models import (
     Service, Post, Comment, Booking, Advertisement, Partner, Author,
-    Category, Tag, Subscriber, NewsletterSubscriber, AdView, AdClick, Event
+    Category, Tag, Subscriber, NewsletterSubscriber, AdView, AdClick, Event, Engagement, ActiveOffer
 )
 from .serializers import (
     ServiceSerializer, PostSerializer, CommentSerializer,
     BookingSerializer, AdvertisementSerializer, PartnerSerializer,
     AuthorSerializer, CategorySerializer, TagSerializer,
-    SubscriberSerializer, NewsletterSubscriberSerializer, EventSerializer
+    SubscriberSerializer, NewsletterSubscriberSerializer, EventSerializer, 
+    EngagementSerializer, ActiveOfferSerializer
 )
+
+
+
+
+class ActiveOfferListView(generics.ListAPIView):
+    queryset = ActiveOffer.objects.all().order_by('expires')
+    serializer_class = ActiveOfferSerializer
+
+
+
+class EngagementListAPIView(generics.ListAPIView):
+    queryset = Engagement.objects.all().order_by('-id')  # Most recent first
+    serializer_class = EngagementSerializer
+
 
 # =======================
 # ✅ ADS ANALYTICS API
