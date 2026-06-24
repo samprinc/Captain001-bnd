@@ -11,26 +11,30 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
 from pathlib import Path
+from dotenv import load_dotenv
+load_dotenv()
+from django import db
 import cloudinary
-import dj_database_url
+from cloudinary_storage.storage import MediaCloudinaryStorage
+import os
+from pathlib import Path
 
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
+dotenv_path = BASE_DIR / '.env'
+# settings.py
 
+# 1. Load your environment variables strictly
+load_dotenv(dotenv_path=BASE_DIR / '.env')
 
-# Quick-start development settings - unsuitable for production
-# See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
+# 2. Setup SECRET_KEY with a fallback for local dev
+SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-dev-key-for-local-only')
 
-# SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-clmyex#ms9r4=6vci)4brs%xp=gfo5q64p#5o$x^vt9cz7*gk='
-
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
-
-ALLOWED_HOSTS = ['*']  # ✅ Update with your domain
-
-
+# 3. Robust DEBUG logic
+DEBUG = True
+# 4. Correct ALLOWED_HOSTS logic
+ALLOWED_HOSTS = ['*']
 # Application definition
 
 INSTALLED_APPS = [
@@ -45,6 +49,7 @@ INSTALLED_APPS = [
     'cloudinary',
     'django_filters',  # For filtering in DRF
     'cloudinary_storage',
+    # 'django_q',  # Django-Q for background tasks
     'core.apps.CoreConfig',
     'django_ckeditor_5',  # ✅ correct name
   # CKEditor 5 for rich text editing
@@ -66,6 +71,7 @@ CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",  # For React dev
     "http://127.0.0.1:3000",
     "http://localhost:5173",  
+    "http://localhost:8080",  # For Django dev
     "https://www.captain001media.co.ke",  # Replace with your deployed frontend domain
 ]
 
@@ -88,24 +94,50 @@ TEMPLATES = [
     },
 ]
 
+# # ==========================================
+# # BACKGROUND TASK ENGINE (Django-Q)
+# # ==========================================
+# Q_CLUSTER = {
+#     'name': 'captain_001_workers',
+#     'workers': 4,             # 4 background threads working simultaneously
+#     'recycle': 500,           # Refresh workers to prevent memory leaks
+#     'timeout': 60,            # Max time an email has to send before timing out
+#     'compress': True,         # Save database space
+#     'cpu_affinity': 1,        
+#     'save_limit': 250,        # Keep a history of the last 250 tasks
+#     'queue_limit': 500,
+#     'catch_up': False,
+#     'orm': 'default'          # Use SQLite/Postgres as the message broker
+# }
+
 WSGI_APPLICATION = 'captainmedia.wsgi.application'
 
-
+# settings.py - add this at the very bottom
+# print(f"--- DEBUG: RESEND_API_KEY value is: '{os.environ.get('RESEND_API_KEY')}' ---")
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
-
 import os
-from dotenv import load_dotenv
-load_dotenv()  # This must come before os.environ.get()
 
+import dj_database_url
+
+# Make sure you replace [YOUR-PASSWORD] with the actual password you typed when you created this Supabase project.
+# Do not include the brackets [ ].
+# SUPABASE_URL = "postgresql://postgres:533dPLP1FilhMhwu@db.iotbcmzqjwklqlbdbfsx.supabase.co:5432/postgres"
+# # SUPABASE_URL = "postgresql://postgres.iotbcmzqjwklqlbdbfsx:533dPLP1FilhMhwu@aws-0-eu-central-1.pooler.supabase.com:6543/postgres"
+
+# DATABASES = {
+#     'default': dj_database_url.parse(
+#         SUPABASE_URL,
+#         conn_max_age=600,
+#         conn_health_checks=True,
+#     )
+# }
 DATABASES = {
-    'default': dj_database_url.parse(
-        os.environ.get("DATABASE_URL"),
-        conn_max_age=600,
-        ssl_require=True,
-    )
-}
-
+        'default':{ 
+            'ENGINE': 'django.db.backends.sqlite3',  # Use SQLite for local development
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
+    }
 
 
 # Password validation
@@ -149,24 +181,42 @@ STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-import cloudinary
 
 cloudinary.config( 
-  cloud_name = "dco3yxmss", 
-  api_key = 851727695154737, 
-  api_secret = "7P6kNWEVhs6N2OAkYbq_T7fAp5k" 
+  cloud_name = os.environ.get('CLOUDINARY_CLOUD_NAME'), 
+  api_key = os.environ.get('CLOUDINARY_API_KEY'), 
+  api_secret = os.environ.get('CLOUDINARY_API_SECRET')
 )
 
+CLOUDINARY_STORAGE = {
+    'CLOUD_NAME': os.environ.get('CLOUDINARY_CLOUD_NAME'),
+    'API_KEY': os.environ.get('CLOUDINARY_API_KEY'),
+    'API_SECRET': os.environ.get('CLOUDINARY_API_SECRET'),
+}
 
-DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
 
+
+
+# settings.py
+load_dotenv(dotenv_path=BASE_DIR / '.env')
+
+
+
+# ==========================================
+# 2. RESEND EMAIL CONFIGURATION
+# ==========================================
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_HOST = 'smtp.resend.com'
 EMAIL_PORT = 587
 EMAIL_USE_TLS = True
-EMAIL_HOST_USER = 'your_email@example.com'
-EMAIL_HOST_PASSWORD = 'your_app_password'
-DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
+
+EMAIL_HOST_USER = 'resend'
+
+# ==== EMAIL UPDATED ====
+EMAIL_HOST_PASSWORD = os.environ.get('RESEND_API_KEY')
+DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL')
+AGENCY_ADMIN_EMAIL = os.environ.get('AGENCY_ADMIN_EMAIL')
+
 
 ADMINS = [('Admin Name', 'admin@example.com')]
 
@@ -195,3 +245,13 @@ REST_FRAMEWORK = {
         'rest_framework.filters.OrderingFilter',
     ]
 }
+
+
+# settings.py
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+        'LOCATION': 'unique-snowflake',
+    }
+}
+

@@ -1,91 +1,114 @@
 from django.contrib import admin
-from django import forms
-from django_ckeditor_5.widgets import CKEditor5Widget  # ✅ Correct import
+from django.utils.html import format_html
+from .models import (
+    Service, ServiceDeliverable, PortfolioImage, Testimonial, 
+    Partner, Author, Category, Tag, Post, Booking, Subscriber
+)
 
-from .models import ActiveOffer,Engagement,Service, Post, Comment, Booking, Advertisement, Partner, Subscriber, Author, Category, Tag, NewsletterSubscriber, AdView, AdClick, Event
+def admin_image_preview(obj):
+    if hasattr(obj, 'image') and obj.image:
+        return format_html('<img src="{}" style="width: 50px; height: 50px; object-fit: cover; border-radius: 4px;" />', obj.image.url)
+    return "No Image"
+admin_image_preview.short_description = 'Preview'
 
-admin.site.site_header = "Captain Media Admin"
-admin.site.site_title = "Captain Media Admin Portal"
-admin.site.index_title = "Welcome to Captain Media Dashboard"
+# ==========================================
+# 2. SERVICES & DELIVERABLES
+# ==========================================
 
-# Custom form to use CKEditor5 in admin
-class PostAdminForm(forms.ModelForm):
-    class Meta:
-        model = Post
-        fields = '__all__'
-        widgets = {
-            'content': CKEditor5Widget(config_name='default')  # ✅ Applies CKEditor5 widget to `content` field
-        }
-# admin.py
+class ServiceDeliverableInline(admin.TabularInline):
+    model = ServiceDeliverable
+    extra = 1
 
-@admin.register(Advertisement)
-class AdvertisementAdmin(admin.ModelAdmin):
-    list_display = (
-        'title',
-        'placement',
-        'device_target',
-        'start_date',
-        'end_date',
-        'active',
-        'total_views',
-        'total_clicks',
-        'ctr',
-    )
-    list_filter = ('active', 'device_target', 'placement', 'start_date', 'end_date')
-    search_fields = ('title',)
+@admin.register(Service)
+class ServiceAdmin(admin.ModelAdmin):
+    list_display = ('title', 'is_active')
+    list_editable = ('is_active',)
+    inlines = [ServiceDeliverableInline]
 
-    def total_views(self, obj):
-        return obj.views.count()
+@admin.register(PortfolioImage)
+class PortfolioImageAdmin(admin.ModelAdmin):
+    list_display = (admin_image_preview, 'title', 'client', 'category', 'is_featured')
+    list_editable = ('is_featured',)
+    list_filter = ('category', 'is_featured')
+    search_fields = ('title', 'client')
 
-    def total_clicks(self, obj):
-        return obj.clicks.count()
+@admin.register(Testimonial)
+class TestimonialAdmin(admin.ModelAdmin):
+    list_display = ('author', 'role', 'is_active')
+    list_editable = ('is_active',)
+    search_fields = ('author', 'quote')
 
-    def ctr(self, obj):
-        views = obj.views.count()
-        clicks = obj.clicks.count()
-        return f"{(clicks / views * 100):.2f}%" if views else "0.00%"
+@admin.register(Partner)
+class PartnerAdmin(admin.ModelAdmin):
+    list_display = ('name', admin_image_preview)
 
-@admin.register(AdView)
-class AdViewAdmin(admin.ModelAdmin):
-    list_display = ('ad', 'ip_address', 'timestamp')
-    list_filter = ('timestamp',)
-    search_fields = ('ip_address',)
+# ==========================================
+# 3. EDITORIAL / INSIGHTS HUB (Fixed)
+# ==========================================
 
-@admin.register(AdClick)
-class AdClickAdmin(admin.ModelAdmin):
-    list_display = ('ad', 'ip_address', 'timestamp')
-    list_filter = ('timestamp',)
-    search_fields = ('ip_address',)
+@admin.register(Author)
+class AuthorAdmin(admin.ModelAdmin):
+    search_fields = ('name',)
+
+@admin.register(Category)
+class CategoryAdmin(admin.ModelAdmin):
+    search_fields = ('name',) # 🚀 Added search_fields to fix the autocomplete error
+
+@admin.register(Tag)
+class TagAdmin(admin.ModelAdmin):
+    search_fields = ('name',)
+
 @admin.register(Post)
 class PostAdmin(admin.ModelAdmin):
-    form = PostAdminForm
-    list_display = ("title", "publish_at", "is_published")
-    list_filter = ("publish_at",)
-    search_fields = ("title", "content")
+    list_display = ('title', admin_image_preview, 'category', 'author', 'is_published', 'publish_at')
+    list_editable = ('is_published',)
+    list_filter = ('is_published', 'category', 'tags')
+    search_fields = ('title', 'excerpt')
+    list_select_related = ('author', 'category')
+    autocomplete_fields = ('author', 'category') 
+    date_hierarchy = 'publish_at'
+
+# ==========================================
+# 4. LEADS & CONVERSIONS (Fixed)
+# ==========================================
+
+@admin.register(Booking)
+class BookingAdmin(admin.ModelAdmin):
+    # 🚀 Added 'status' to list_display so it can be edited
+    list_display = ('name', 'service_requested', 'budget', 'status', 'status_colored', 'booked_at')
+    list_editable = ('status',)
+    list_filter = ('status', 'budget')
+    search_fields = ('name', 'email', 'phone', 'service_requested')
+    readonly_fields = ('booked_at',)
+    date_hierarchy = 'booked_at'
+
+    def status_colored(self, obj):
+        colors = {'pending': 'orange', 'contacted': 'blue', 'proposal': 'purple', 'won': 'green', 'lost': 'red'}
+        return format_html(
+            '<span style="color: {}; font-weight: bold;">{}</span>',
+            colors.get(obj.status, 'black'),
+            obj.status.upper()
+        )
+    status_colored.short_description = 'Status Label'
 
 @admin.register(Subscriber)
 class SubscriberAdmin(admin.ModelAdmin):
     list_display = ('email', 'name', 'date_subscribed')
     search_fields = ('email', 'name')
+    date_hierarchy = 'date_subscribed'
 
-# Register other models
-admin.site.register(Partner)
-   
-admin.site.register(Service)
-admin.site.register(Comment)
-admin.site.register(Booking)
-admin.site.register(Author)
-admin.site.register(Category)
-admin.site.register(Tag)
-admin.site.register(NewsletterSubscriber)
-admin.site.register(Engagement)
-admin.site.register(ActiveOffer)
+# core/admin.py (add to the bottom)
+from .models import CaseStudy, CaseStudyMetric
 
-@admin.register(Event)
-class EventAdmin(admin.ModelAdmin):
-    list_display = ('title', 'date', 'location')
-    search_fields = ('title', 'location')
-    ordering = ('date',)
+class CaseStudyMetricInline(admin.TabularInline):
+    model = CaseStudyMetric
+    extra = 2 # Shows 2 empty metric rows by default
 
-
-
+@admin.register(CaseStudy)
+class CaseStudyAdmin(admin.ModelAdmin):
+    list_display = ('title', 'client_name', 'industry', 'featured')
+    list_editable = ('featured',)
+    list_filter = ('industry', 'project_type', 'featured')
+    search_fields = ('title', 'client_name')
+    prepopulated_fields = {'slug': ('title',)} # Auto-generates the slug as you type the title
+    inlines = [CaseStudyMetricInline] # Injects the metrics builder

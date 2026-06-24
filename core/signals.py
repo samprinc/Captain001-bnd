@@ -1,60 +1,44 @@
 from django.db.models.signals import post_save
 from django.dispatch import receiver
-from django.utils import timezone
-from django.core.mail import EmailMultiAlternatives
-from django.conf import settings
-from .models import Post, Subscriber
+from .models import Booking
+from .services.email_service import EmailService
 
-@receiver(post_save, sender=Post)
-def notify_on_publish(sender, instance, created, **kwargs):
+@receiver(post_save, sender=Booking)
+def handle_booking_emails(sender, instance, created, **kwargs):
+    """
+    Acts as a traffic controller. When a booking is saved, it hands the 
+    heavy lifting off to the background EmailService so the web server doesn't freeze.
+    """
+    
+    # ------------------------------------------------------------------
+    # CASE A: New Booking Created (Instant Confirmation)
+    # ------------------------------------------------------------------
+    if created:
+        subject = f"We've received your brief: {instance.service_requested}"
+        
+        # 1. Fire the confirmation to the client in the background
+        EmailService.send_client_async(
+            instance=instance,
+            template_path="emails/booking_confirmation.html",
+            subject=subject
+        )
+        
+        # 2. Fire the alert to the Admin in the background
+        EmailService.send_admin_alert_async(instance)
 
-    try:
-        old_instance = Post.objects.get(pk=instance.pk)
-    except Post.DoesNotExist:
-        old_instance = None
-
-    just_published = (
-        instance.is_published and
-        (not old_instance or not old_instance.is_published)
-    )
-
-    if just_published:
-        subject = f"📰 New Post Published: {instance.title}"
-        plain_message = f"{instance.title}\n\n{instance.content[:200]}...\nVisit the site to read more."
-        from_email = settings.DEFAULT_FROM_EMAIL
-        post_url = f"https://yourdomain.com/posts/{instance.id}"  # ✅ Update your domain here
-
-        html_content = f"""
-        <div style="font-family:Arial,sans-serif;line-height:1.6;">
-          <h2>{instance.title}</h2>
-          <p>{instance.content[:200]}...</p>
-          <a href="{post_url}" style="
-            display:inline-block;
-            padding:10px 20px;
-            background-color:#007BFF;
-            color:#ffffff;
-            text-decoration:none;
-            border-radius:5px;
-          ">Read Full Article</a>
-        </div>
-        """
-
-        # Notify Admins
-        admin_emails = [admin[1] for admin in settings.ADMINS]
-        if admin_emails:
-            msg = EmailMultiAlternatives(subject, plain_message, from_email, admin_emails)
-            msg.attach_alternative(html_content, "text/html")
-            msg.send(fail_silently=True)
-
-        # Notify Author
-        if hasattr(instance, "author") and instance.author and instance.author.email:
-            msg = EmailMultiAlternatives(subject, plain_message, from_email, [instance.author.email])
-            msg.attach_alternative(html_content, "text/html")
-            msg.send(fail_silently=True)
-
-        # Notify Subscribers
-        subscriber_emails = Subscriber.objects.values_list('email', flat=True)
-        if subscriber_emails:
-            msg = EmailMultiAlternatives(subject, plain_message, from_email, list(subscriber_emails))
-            msg.attach_alternative(html_content, "text/html")
-            msg.send(fail_silently=True)
+    # ------------------------------------------------------------------
+    # CASE B: Booking Updated (Status Transition Notification)
+    # ------------------------------------------------------------------
+    else:
+        if instance.status == 'contacted':
+            EmailService.send_client_async(
+                instance=instance,
+                template_path="emails/status_contacted.html",
+                subject="Let's talk: Your discovery call is ready to be scheduled"
+            )
+        elif instance.status == 'proposal':
+            EmailService.send_client_async(
+                instance=instance,
+                template_path="emails/status_proposal.html",
+                subject="Your project proposal has arrived"
+            )

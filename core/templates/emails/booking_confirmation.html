@@ -1,0 +1,48 @@
+<!-- Booking Confirmation Email: templates/emails/booking_confirmation.html -->
+<!DOCTYPE html>
+<html>
+<body style="margin: 0; padding: 0; background-color: #f9fafb; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #f9fafb; padding: 40px 20px;">
+    <tr>
+      <td align="center">
+        <table width="600" cellpadding="0" cellspacing="0" border="0" style="background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.05);">
+          <tr>
+            <td style="background-color: #111827; padding: 40px; text-align: center;">
+              <h1 style="color: #ffffff; margin: 0; font-size: 24px; font-weight: 900; letter-spacing: -0.5px;">CAPTAIN 001</h1>
+              <p style="color: #9ca3af; margin: 8px 0 0 0; font-size: 10px; text-transform: uppercase; letter-spacing: 2px;">Media • Strategy • Storytelling</p>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding: 40px;">
+              <p style="margin: 0 0 20px 0; font-size: 16px; color: #111827;">Hello {{ name }},</p>
+              <p style="margin: 0 0 30px 0; font-size: 16px; color: #4b5563; line-height: 1.6;">
+                We have officially received your brief for <strong>{{ service }}</strong>. Our strategy and production directors are currently reviewing the details to ensure we are the perfect fit to execute your vision.
+              </p>
+              
+              <div style="background-color: #f3f4f6; border-left: 4px solid #ff6600; padding: 20px; border-radius: 0 8px 8px 0; margin-bottom: 30px;">
+                <p style="margin: 0 0 8px 0; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: #6b7280; font-weight: bold;">Brief Summary</p>
+                <p style="margin: 0 0 4px 0; font-size: 14px; color: #111827;"><strong>Scale:</strong> {{ budget }}</p>
+                <p style="margin: 0; font-size: 14px; color: #111827;"><strong>Vision:</strong> {{ details|truncatechars:100 }}</p>
+              </div>
+
+              <p style="margin: 0 0 20px 0; font-size: 16px; color: #4b5563; line-height: 1.6;">
+                <strong>What happens next?</strong><br>
+                You will hear back from us within 24 hours to schedule a formal discovery call.
+              </p>
+              
+              <p style="margin: 0; font-size: 16px; color: #111827; font-weight: bold;">
+                — The Captain 001 Studio Team
+              </p>
+            </td>
+          </tr>
+          <tr>
+            <td style="background-color: #f9fafb; padding: 20px; text-align: center; border-top: 1px solid #e5e7eb;">
+              <p style="margin: 0; font-size: 12px; color: #9ca3af;">Nairobi, Kenya • Executing Globally</p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>

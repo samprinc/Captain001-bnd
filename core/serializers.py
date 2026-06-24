@@ -1,122 +1,107 @@
 from rest_framework import serializers
-from .models import (
-    Service, Post, Comment, Booking, Advertisement,
-    Partner, Subscriber, Author, Category, Tag, NewsletterSubscriber, Event, Engagement, ActiveOffer
-)
-
-import re
-
-# === Author / Category / Tag ===
-class EventSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Event
-        fields = '__all__'
-
-class AuthorSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Author
-        fields = ['id', 'name', 'email', 'profile_pic', 'bio']
-
-class CategorySerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Category
-        fields = ['id', 'name']
-
-class TagSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Tag
-        fields = ['id', 'name']
-
-
-# === Comments / Posts ===
-
-class CommentSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Comment
-        fields = '__all__'
-
-class PostSerializer(serializers.ModelSerializer):
-    author = AuthorSerializer(read_only=True)
-    category = CategorySerializer(read_only=True)
-    tags = TagSerializer(many=True, read_only=True)
-    comments = CommentSerializer(many=True, read_only=True)
-
-    class Meta:
-        model = Post
-        fields = [
-            'id', 'title', 'image', 'content', 'author',
-            'category', 'tags', 'is_published', 'publish_at', 'comments'
-        ]
-
-
-
-# === Services / Bookings ===
+from .models import Service, PortfolioImage, Testimonial, Partner, Post, Booking, Subscriber, CaseStudy, CaseStudyMetric
 
 class ServiceSerializer(serializers.ModelSerializer):
+    # This turns the list of ID-linked deliverables into a clean list of strings
+    deliverables = serializers.StringRelatedField(many=True, read_only=True)
+
     class Meta:
         model = Service
-        fields = '__all__'
-class BookingSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Booking
-        fields = '__all__'
+        fields = ['id', 'title', 'tagline', 'description', 'image', 'icon', 'deliverables']
 
-    def validate_phone(self, value):
-        if not re.match(r'^\+?\d{9,15}$', value):
-            raise serializers.ValidationError("Enter a valid phone number.")
-        return value
-
-# === Ads ===
-
-class AdvertisementSerializer(serializers.ModelSerializer):
-    views_count = serializers.IntegerField(source='views.count', read_only=True)
-    clicks_count = serializers.IntegerField(source='clicks.count', read_only=True)
-    is_live = serializers.SerializerMethodField()
-    ctr = serializers.SerializerMethodField()
+class PortfolioImageSerializer(serializers.ModelSerializer):
+    # This reaches across the Foreign Key and grabs the string name
+    category_name = serializers.CharField(source='category.name', read_only=True)
 
     class Meta:
-        model = Advertisement
+        model = PortfolioImage
+        # Explicitly list the fields so React gets exactly what it needs
+        fields = ['id', 'title', 'client', 'category_name', 'image', 'is_featured', 'uploaded_at']
+        
+    def get_image(self, obj):
+        # We can use the same bulletproof trick here just in case!
+        if not obj.image:
+            return None
+        img_str = str(obj.image)
+        if 'http' in img_str:
+            http_index = img_str.find('http')
+            return img_str[http_index:]
+        if hasattr(obj.image, 'url'):
+            return obj.image.url
+        return img_str
+
+class TestimonialSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Testimonial
         fields = '__all__'
-
-    def get_is_live(self, obj):
-        from django.utils import timezone
-        today = timezone.now().date()
-        return obj.active and obj.start_date <= today <= obj.end_date
-
-    def get_ctr(self, obj):
-        views = obj.views.count()
-        clicks = obj.clicks.count()
-        return round((clicks / views) * 100, 2) if views else 0
-
-
-# === Partner / Subscriber ===
 
 class PartnerSerializer(serializers.ModelSerializer):
     class Meta:
         model = Partner
         fields = '__all__'
 
+class PostSerializer(serializers.ModelSerializer):
+    # Flattening related fields to match your React 'Post' type
+    category_name = serializers.CharField(source='category.name', read_only=True)
+    author_name = serializers.CharField(source='author.name', read_only=True)
+    tags = serializers.SlugRelatedField(many=True, read_only=True, slug_field='name')
+    
+    # ==== SPRINT 3 FIX: Take control of the image field ====
+    image = serializers.SerializerMethodField() 
+
+    class Meta:
+        model = Post
+        fields = [
+            'id','slug', 'title', 'excerpt', 'content', 'category_name', 
+            'author_name', 'publish_at', 'read_time', 'image', 'tags'
+        ]
+
+   # ==== BULLETPROOF IMAGE HANDLER ====
+    def get_image(self, obj):
+        if not obj.image:
+            return None
+        
+        img_str = str(obj.image)
+        
+        # 1. If there is an external link anywhere in the string, extract it cleanly
+        # This catches "https://..." AND "image/upload/https://..."
+        if 'http' in img_str:
+            # Find where 'http' starts and return everything from that point onward
+            http_index = img_str.find('http')
+            return img_str[http_index:]
+            
+        # 2. If it is a normal local file uploaded via the Django Admin
+        if hasattr(obj.image, 'url'):
+            return obj.image.url
+            
+        return img_str
+
+
+class BookingSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Booking
+        fields = '__all__'
+
+
 class SubscriberSerializer(serializers.ModelSerializer):
     class Meta:
         model = Subscriber
-        fields = '__all__'
+        fields = ['id', 'email', 'name', 'date_subscribed']
+        read_only_fields = ['date_subscribed']
 
-class NewsletterSubscriberSerializer(serializers.ModelSerializer):
+
+class CaseStudyMetricSerializer(serializers.ModelSerializer):
     class Meta:
-        model = NewsletterSubscriber
-        fields = ['email']
+        model = CaseStudyMetric
+        fields = ['label', 'value']
 
+class CaseStudySerializer(serializers.ModelSerializer):
+    # This nests the metrics perfectly inside the CaseStudy JSON array
+    metrics = CaseStudyMetricSerializer(many=True, read_only=True)
 
-
-class EngagementSerializer(serializers.ModelSerializer):
     class Meta:
-        model = Engagement
-        fields = '__all__'
-
-# backend/news/serializers.py
-
-
-class ActiveOfferSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = ActiveOffer
-        fields = ['id', 'title', 'expires', 'link']
+        model = CaseStudy
+        fields = [
+            'id', 'title', 'slug', 'client_name', 'industry', 'project_type', 
+            'challenge', 'solution', 'outcome', 'metrics', 'hero_image', 'featured'
+        ]
