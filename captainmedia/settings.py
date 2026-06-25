@@ -32,7 +32,7 @@ load_dotenv(dotenv_path=BASE_DIR / '.env')
 SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-dev-key-for-local-only')
 
 # 3. Robust DEBUG logic
-DEBUG = True
+DEBUG = os.environ.get('DEBUG', 'True').lower() in ['true', '1', 't']
 # 4. Correct ALLOWED_HOSTS logic
 ALLOWED_HOSTS = ['*']
 # Application definition
