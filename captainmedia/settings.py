@@ -74,7 +74,11 @@ CORS_ALLOWED_ORIGINS = [
     "http://localhost:8080",  # For Django dev
     "https://www.captain001media.co.ke",  # Replace with your deployed frontend domain
 ]
-
+CSRF_TRUSTED_ORIGINS = [
+    "https://captain001-fnd.vercel.app",
+    "https://www.captain001media.co.ke",  # Replace with your deployed frontend domain
+    "https://captain001-cjhhsmxxx-dashboardpataspace.vercel.app", # <-- ADD THIS NEW URL
+]
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 ROOT_URLCONF = 'captainmedia.urls'
