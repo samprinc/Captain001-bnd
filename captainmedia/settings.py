@@ -123,7 +123,6 @@ import dj_database_url
 # Make sure you replace [YOUR-PASSWORD] with the actual password you typed when you created this Supabase project.
 # Do not include the brackets [ ].
 # SUPABASE_URL = "postgresql://postgres:533dPLP1FilhMhwu@db.iotbcmzqjwklqlbdbfsx.supabase.co:5432/postgres"
-# # SUPABASE_URL = "postgresql://postgres.iotbcmzqjwklqlbdbfsx:533dPLP1FilhMhwu@aws-0-eu-central-1.pooler.supabase.com:6543/postgres"
 
 # DATABASES = {
 #     'default': dj_database_url.parse(
@@ -133,11 +132,12 @@ import dj_database_url
 #     )
 # }
 DATABASES = {
-        'default':{ 
-            'ENGINE': 'django.db.backends.sqlite3',  # Use SQLite for local development
-            'NAME': BASE_DIR / 'db.sqlite3',
-        }
-    }
+    'default': dj_database_url.config(
+        default=os.environ.get('SUPABASE_URL'),
+        conn_max_age=600,
+        conn_health_checks=True,
+    )
+}
 
 
 # Password validation
